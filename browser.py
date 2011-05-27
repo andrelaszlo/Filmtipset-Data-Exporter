@@ -232,12 +232,6 @@ def main_filmtipset():
         #                 print("\t%s" % l)
     else:
         print("Wrong username or password")
-
-def main_hell():
-    b = Browser("helvetet.com")
-    (response, data) = b.request("/")
-    #print(str(data), 'latin_1')
         
 if __name__ == "__main__":
     main_filmtipset()
-    #main_hell()
