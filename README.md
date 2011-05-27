@@ -1,7 +1,18 @@
 Filmtipset Data Exporter
 ========================
 
-Export data from your account at Filmtipset.
+### Swedish ###
+
+Exportera dina betyg från [Filmtipset](http://www.filmtipset.se).
+
+Projektets mål är att
+
+1. Göra säkerhetskopior på dina betyg på Filmtipset
+2. Att kunna ladda upp betygen på andra sajter, till exempel Flixter
+
+### English ###
+
+Export data from your account at [Filmtipset](http://www.filmtipset.se)
 
 The goals of this project are
 
