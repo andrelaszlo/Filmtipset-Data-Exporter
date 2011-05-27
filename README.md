@@ -1,7 +1,7 @@
 Filmtipset Data Exporter
 ========================
 
-### Swedish ###
+### Svenska ###
 
 Exportera dina betyg från [Filmtipset](http://www.filmtipset.se).
 

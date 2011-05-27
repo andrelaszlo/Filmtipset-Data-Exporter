@@ -8,7 +8,7 @@ import getpass
 import sys
 
 from math import ceil
-from datetime import datetime
+from datetime import datetime, date
 
 from browser import Browser
 
@@ -67,13 +67,13 @@ class FilmtipsetBrowser(Browser):
                 for line in html.splitlines():
                     match = info.search(line)
                     if match:
+                        m_date = date(*[int(x) for x in match.group(5).split('-')])
                         movies.append({'grade': grade,
                                        'url': match.group(1),
                                        'title': match.group(2),
                                        'o_title': match.group(3),
                                        'id': int(match.group(4)),
-                                       'date': match.group(5)})
-                        #TODO: convert dates to actual dates
+                                       'date': m_date})
                         #print("%s got grade %s" % (movies[-1]['o_title'], movies[-1]['grade']))
         return movies
 
@@ -95,7 +95,7 @@ class FilmtipsetBrowser(Browser):
             for m in pat.finditer(html):
                 (h, mi, y, mo, d) = map(lambda x: int(m.group(x)),
                                         [3, 4, 7, 6, 5])
-                #TODO: Fix timezone
+                #TODO: Fix timezone (?)
                 comments.append((m.group(1), self.decode(m.group(2)), datetime(y, mo, d, h, mi)))
                 #print("\n%s:\n'%s'" % (m.group(1), m.group(2)))
             if nxt.search(html):
@@ -158,16 +158,16 @@ def main_filmtipset():
             if comment_list:
                 m['comments'] = comment_list
 
-        for m in movies:
-            print()
-            print("%s - %s" % (m['title'], m['grade']))
-            if 'comments' in m:
-                for c in m['comments']:
-                    print("\t%s" % c[1])
-                    for l in c[0].splitlines():
-                        print("\t%s" % l)
+        # for m in movies:
+        #     print()
+        #     print("%s - %s" % (m['title'], m['grade']))
+        #     if 'comments' in m:
+        #         for c in m['comments']:
+        #             print("\t%s" % c[1])
+        #             for l in c[0].splitlines():
+        #                 print("\t%s" % l)
 
-        #print(list(filter(lambda x: x['url'] == 'titanic-1997', movies))[0])
+        print(list(filter(lambda x: x['url'] == 'wargames-the-dead-code', movies))[0])
 
         #for m in movies: print(str(m))
     else:
