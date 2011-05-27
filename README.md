@@ -34,6 +34,8 @@ Files
 License
 -------
 
+![Creative Commons License](http://i.creativecommons.org/l/by-nc/3.0/88x31.png)
+
 [Filmtipset Data Exporter by André
 Laszlo](https://github.com/andrelaszlo/Filmtipset-Data-Exporter) is licensed
 under a [Creative Commons Attribution-NonCommercial 3.0 Unported
