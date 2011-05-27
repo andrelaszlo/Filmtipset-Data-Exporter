@@ -1,2 +1,3 @@
 *.html
 request_params.txt
+*.pyc

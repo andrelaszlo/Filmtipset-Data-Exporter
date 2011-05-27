@@ -3,7 +3,7 @@ Filmtipset Data Exporter
 
 Export data from your account at Filmtipset.
 
-The goal of this project is
+The goals of this project are
 
 1. To backup your movie ratings from Filmtipset
 2. To upload your ratings to other sites, such as Flixter
@@ -22,3 +22,11 @@ have not gotten permission from Filmtipset to do this - you have been warned,
 do not blame me if you get banned or something.
 
 If you wish to contact me, my email address is <andre@laszlo.nu>.
+
+Files
+-----
+
+* browser.py - A small http "browser" class that keeps cookies (made for this project)
+* filmtipset.py - The main program
+* README.md - This text
+* .gitignore - List of files for GIT to ignore
