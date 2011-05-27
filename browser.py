@@ -119,8 +119,10 @@ class FilmtipsetBrowser(Browser):
         pattern = r'a href="film/(.*?)\.html".*?Titel:</i></b> (.*?)</div>.*?Originaltitel:</i></b> (.*?)</div>.*?Film nr\.:</i></b> ([0-9]*)</div>.*?Betyg satt:</i></b> (.*?)<br/>'
         info = re.compile(pattern, re.I)
         movies = []
+        #for grade in [1]:
         for grade in range(1,6):
             pages = int(ceil(graded_movies[grade]/100.0))
+            #for offset in [0]:
             for offset in range(pages):
                 print("Loading movies graded %s (page %s of %s)" % (grade, offset+1, pages))
                 curl = url % (member, offset*100, grade)
@@ -138,8 +140,36 @@ class FilmtipsetBrowser(Browser):
                                        'o_title': match.group(3),
                                        'id': int(match.group(4)),
                                        'date': match.group(5)})
+                        #TODO: convert dates to actual dates
                         #print("%s got grade %s" % (movies[-1]['o_title'], movies[-1]['grade']))
         return movies
+
+    def comments(self, member):
+        url = "/filmtipset/yourpage.cgi?page=commented_movies&member=%s&offset=%s"
+        pat = re.compile(r'<a href="film/(.*?).html".*?' + 
+                         r'<div style="" class=favoritetext>(.*?)</div>.*?' + 
+                         r'(\d+:\d+ \d+/\d+ \d{4})',
+                         re.MULTILINE | re.DOTALL)
+        nxt = re.compile(r'images/ner\.gif', re.IGNORECASE | re.MULTILINE)
+        comments = []
+        offset = 0
+        while True: # loop through comment pages
+            print("\rComment page %s" % str(int(round(offset/20.0))+1), end="")
+            sys.stdout.flush()
+            furl = url % (member, offset)
+            (response, data) = self.request(furl)
+            html = str(data, 'latin_1')
+            for m in pat.finditer(html):
+                #TODO: unescape html entities, http://wiki.python.org/moin/EscapingHtml
+                #TODO: convert dates to actual dates
+                comments.append((m.group(1), m.group(2), m.group(3)))
+                #print("\n%s:\n'%s'" % (m.group(1), m.group(2)))
+            if nxt.search(html):
+                offset += 20
+            else:
+                break # last page
+        print()
+        return comments
 
     def imdb(self, url):
         full_url = "/filmtipset/film/%s.html"
@@ -159,7 +189,6 @@ def main_filmtipset():
     user = sys.stdin.readline().strip()
     password = getpass.getpass()
     if (b.login(user, password)):
-        #b.debug()
         h = b.home()
         member = h['member']
         print("Member no:", member)
@@ -172,11 +201,35 @@ def main_filmtipset():
         movies = b.movies(member, grades)
         print("Got grades and info for %s movies" % len(movies))
         print("Getting IMDB links")
-        for m in movies:
+        for k,m in enumerate(movies):
             imdb = b.imdb(m['url'])
+            print("\r" + str(int(100.0*((k+1)/len(movies)))) + "%", end='')
+            sys.stdout.flush()
             if imdb:
                 m['imdb'] = imdb
-                print("%s has IMDB id %s" % (m['o_title'], imdb))
+                #print("%s has IMDB id %s" % (m['o_title'], imdb))
+        print()
+
+        print("Reading comments")
+        comments = b.comments(member)
+        print("Found %s comments" % len(comments))
+
+        # merge comments with movies
+        for m in movies:
+            comment_list = list(map(lambda y: (y[1], y[2]),
+                                    filter(lambda x: x[0] == m['url'], 
+                                           comments)))
+            if comment_list:
+                m['comments'] = comment_list
+
+        # for m in movies:
+        #     print()
+        #     print("%s - %s" % (m['title'], m['grade']))
+        #     if 'comments' in m:
+        #         for c in m['comments']:
+        #             print("\t%s" % c[1])
+        #             for l in c[0].splitlines():
+        #                 print("\t%s" % l)
     else:
         print("Wrong username or password")
 
