@@ -30,3 +30,14 @@ Files
 * filmtipset.py - The main program
 * README.md - This text
 * .gitignore - List of files for GIT to ignore
+
+License
+-------
+
+[Filmtipset Data Exporter by André
+Laszlo](https://github.com/andrelaszlo/Filmtipset-Data-Exporter) is licensed
+under a [Creative Commons Attribution-NonCommercial 3.0 Unported
+License](http://creativecommons.org/licenses/by-nc/3.0/).
+
+Permissions beyond the scope of this license may be available at
+<andre@laszlo.nu>.
