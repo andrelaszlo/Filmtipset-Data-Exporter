@@ -112,6 +112,7 @@ class FilmtipsetBrowser(Browser):
 
 def main_filmtipset():
     b = FilmtipsetBrowser()
+    #b.debug = True
     print("Username:", end=" ")
     sys.stdout.flush()
     user = sys.stdin.readline().strip()
