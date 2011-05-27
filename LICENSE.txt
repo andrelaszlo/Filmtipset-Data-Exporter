@@ -198,7 +198,7 @@ subject to and limited by the following restrictions:
            the exclusive right to collect such royalties for any exercise by
            You of the rights granted under this License;
 
-	   ii. Waivable Compulsory License Schemes. In those jurisdictions in which
+       ii. Waivable Compulsory License Schemes. In those jurisdictions in which
            the right to collect royalties through any statutory or compulsory
            licensing scheme can be waived, the Licensor reserves the exclusive
            right to collect such royalties for any exercise by You of the
@@ -208,7 +208,7 @@ subject to and limited by the following restrictions:
            collect royalties through any statutory or compulsory licensing
            scheme; and,
 
-	  iii. Voluntary License Schemes. The Licensor reserves the right to
+      iii. Voluntary License Schemes. The Licensor reserves the right to
            collect royalties, whether individually or, in the event that the
            Licensor is a member of a collecting society that administers
            voluntary licensing schemes, via that society, from any exercise by
