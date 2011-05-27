@@ -1,6 +1,9 @@
 import http.client as httplib
-from http.client import ResponseNotReady
 import urllib.parse as urllib
+import re
+from http.client import ResponseNotReady
+from html.entities import name2codepoint
+
 
 class Browser:
     
@@ -24,6 +27,10 @@ class Browser:
     def _print(self, *msg):
         if self._debug:
             print(*msg)
+
+    def decode(self, html): # decode html entities
+        return re.sub('&(%s);' % '|'.join(name2codepoint), 
+                      lambda m: chr(name2codepoint[m.group(1)]), html)
 
     def request(self, url, data = None, method="GET", retries=0):
         self._print("%s request '%s'" % (method, url))

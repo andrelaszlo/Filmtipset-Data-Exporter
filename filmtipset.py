@@ -4,6 +4,7 @@ import getpass
 import sys
 
 from math import ceil
+from datetime import datetime
 
 from browser import Browser
 
@@ -76,7 +77,7 @@ class FilmtipsetBrowser(Browser):
         url = "/filmtipset/yourpage.cgi?page=commented_movies&member=%s&offset=%s"
         pat = re.compile(r'<a href="film/(.*?).html".*?' + 
                          r'<div style="" class=favoritetext>(.*?)</div>.*?' + 
-                         r'(\d+:\d+ \d+/\d+ \d{4})',
+                         r'(\d+):(\d+) (\d+)/(\d+) (\d{4})',
                          re.MULTILINE | re.DOTALL)
         nxt = re.compile(r'images/ner\.gif', re.IGNORECASE | re.MULTILINE)
         comments = []
@@ -88,9 +89,10 @@ class FilmtipsetBrowser(Browser):
             (response, data) = self.request(furl)
             html = str(data, 'latin_1')
             for m in pat.finditer(html):
-                #TODO: unescape html entities, http://wiki.python.org/moin/EscapingHtml
-                #TODO: convert dates to actual dates
-                comments.append((m.group(1), m.group(2), m.group(3)))
+                (h, mi, y, mo, d) = map(lambda x: int(m.group(x)),
+                                        [3, 4, 7, 6, 5])
+                #TODO: Fix timezone
+                comments.append((m.group(1), self.decode(m.group(2)), datetime(y, mo, d, h, mi)))
                 #print("\n%s:\n'%s'" % (m.group(1), m.group(2)))
             if nxt.search(html):
                 offset += 20
@@ -129,15 +131,16 @@ def main_filmtipset():
                 print(str(n), round(70 * float(grades[n]) / m) * "*", "(" + str(grades[n]) + ")")
         movies = b.movies(member, grades)
         print("Got grades and info for %s movies" % len(movies))
-        print("Getting IMDB links")
-        for k,m in enumerate(movies):
-            imdb = b.imdb(m['url'])
-            print("\r" + str(int(100.0*((k+1)/len(movies)))) + "%", end='')
-            sys.stdout.flush()
-            if imdb:
-                m['imdb'] = imdb
-                #print("%s has IMDB id %s" % (m['o_title'], imdb))
-        print()
+        #print("Getting IMDB links")
+
+        # for k,m in enumerate(movies):
+        #     imdb = b.imdb(m['url'])
+        #     print("\r" + str(int(100.0*((k+1)/len(movies)))) + "%", end='')
+        #     sys.stdout.flush()
+        #     if imdb:
+        #         m['imdb'] = imdb
+        #         #print("%s has IMDB id %s" % (m['o_title'], imdb))
+        # print()
 
         print("Reading comments")
         comments = b.comments(member)
@@ -151,14 +154,18 @@ def main_filmtipset():
             if comment_list:
                 m['comments'] = comment_list
 
-        # for m in movies:
-        #     print()
-        #     print("%s - %s" % (m['title'], m['grade']))
-        #     if 'comments' in m:
-        #         for c in m['comments']:
-        #             print("\t%s" % c[1])
-        #             for l in c[0].splitlines():
-        #                 print("\t%s" % l)
+        for m in movies:
+            print()
+            print("%s - %s" % (m['title'], m['grade']))
+            if 'comments' in m:
+                for c in m['comments']:
+                    print("\t%s" % c[1])
+                    for l in c[0].splitlines():
+                        print("\t%s" % l)
+
+        #print(list(filter(lambda x: x['url'] == 'titanic-1997', movies))[0])
+
+        #for m in movies: print(str(m))
     else:
         print("Wrong username or password")
         
