@@ -12,6 +12,9 @@ from datetime import datetime, date
 
 from browser import Browser
 
+class FilmtipsetLoginError(Exception):
+    pass
+
 class FilmtipsetBrowser(Browser):
 
     def __init__(self):
@@ -52,11 +55,11 @@ class FilmtipsetBrowser(Browser):
         pattern = r'a href="film/(.*?)\.html".*?Titel:</i></b> (.*?)</div>.*?Originaltitel:</i></b> (.*?)</div>.*?Film nr\.:</i></b> ([0-9]*)</div>.*?Betyg satt:</i></b> (.*?)<br/>'
         info = re.compile(pattern, re.I)
         movies = []
-        for grade in [1]:
-        #for grade in range(1,6):
+        #for grade in [1]:
+        for grade in range(1,6):
             pages = int(ceil(graded_movies[grade]/100.0))
-            for offset in [0]:
-            #for offset in range(pages):
+            #for offset in [0]:
+            for offset in range(pages):
                 print("Loading movies graded %s (page %s of %s)" % (grade, offset+1, pages))
                 curl = url % (member, offset*100, grade)
                 (response, data) = self.request(curl)
@@ -116,6 +119,46 @@ class FilmtipsetBrowser(Browser):
         else:
             return None
 
+    def load(self, username, password):
+        if not self.login(username, password):
+            raise FilmtipsetLoginError()
+        else:
+            h = self.home()
+            member = h['member']
+            print(username, "is member number", member)
+            
+            grades = h['grades']
+            if grades:
+                print("Grades:")
+                m = max(grades.values())
+                for n in range(1,6):
+                    print(str(n), round(70 * float(grades[n]) / m) * "*", "(" + str(grades[n]) + ")")
+            movies = self.movies(member, grades)
+            print("Got grades and info for %s movies" % len(movies))
+
+            print("Getting IMDB links")
+            for k,m in enumerate(movies):
+                imdb = self.imdb(m['url'])
+                print("\r" + str(int(100.0*((k+1)/len(movies)))) + "%", end='')
+                sys.stdout.flush()
+                if imdb:
+                    m['imdb'] = imdb
+                    #print("%s has IMDB id %s" % (m['o_title'], imdb))
+            print()
+    
+            print("Reading comments")
+            comments = self.comments(member)
+            print("Found %s comments" % len(comments))
+    
+            # merge comments with movies
+            for m in movies:
+                comment_list = list(map(lambda y: (y[1], y[2]),
+                                        filter(lambda x: x[0] == m['url'], 
+                                               comments)))
+                if comment_list:
+                    m['comments'] = comment_list
+            return movies
+
 def main_filmtipset():
     b = FilmtipsetBrowser()
     #b.debug = True
@@ -123,55 +166,28 @@ def main_filmtipset():
     sys.stdout.flush()
     user = sys.stdin.readline().strip()
     password = getpass.getpass()
-    if (b.login(user, password)):
-        h = b.home()
-        member = h['member']
-        print("Member no:", member)
-        print("Grades:")
-        grades = h['grades']
-        if grades:
-            m = max(grades.values())
-            for n in range(1,6):
-                print(str(n), round(70 * float(grades[n]) / m) * "*", "(" + str(grades[n]) + ")")
-        movies = b.movies(member, grades)
-        print("Got grades and info for %s movies" % len(movies))
-        #print("Getting IMDB links")
 
-        # for k,m in enumerate(movies):
-        #     imdb = b.imdb(m['url'])
-        #     print("\r" + str(int(100.0*((k+1)/len(movies)))) + "%", end='')
-        #     sys.stdout.flush()
-        #     if imdb:
-        #         m['imdb'] = imdb
-        #         #print("%s has IMDB id %s" % (m['o_title'], imdb))
-        # print()
-
-        print("Reading comments")
-        comments = b.comments(member)
-        print("Found %s comments" % len(comments))
-
-        # merge comments with movies
-        for m in movies:
-            comment_list = list(map(lambda y: (y[1], y[2]),
-                                    filter(lambda x: x[0] == m['url'], 
-                                           comments)))
-            if comment_list:
-                m['comments'] = comment_list
-
-        # for m in movies:
-        #     print()
-        #     print("%s - %s" % (m['title'], m['grade']))
-        #     if 'comments' in m:
-        #         for c in m['comments']:
-        #             print("\t%s" % c[1])
-        #             for l in c[0].splitlines():
-        #                 print("\t%s" % l)
-
-        print(list(filter(lambda x: x['url'] == 'wargames-the-dead-code', movies))[0])
-
-        #for m in movies: print(str(m))
-    else:
+    try:
+        movies = b.load(user, password)
+    except FilmtipsetLoginError:
         print("Wrong username or password")
-        
+        return
+
+    f = open('./filmtipset-data.txt', 'w')
+    f.write(str(movies))
+    f.close()
+    # for m in movies:
+    #     print()
+    #     print("%s - %s" % (m['title'], m['grade']))
+    #     if 'comments' in m:
+    #         for c in m['comments']:
+    #             print("\t%s" % c[1])
+    #             for l in c[0].splitlines():
+    #                 print("\t%s" % l)
+
+    # print(list(filter(lambda x: x['url'] == 'wargames-the-dead-code', movies))[0])
+
+    # for m in movies: print(str(m))
+
 if __name__ == "__main__":
     main_filmtipset()
