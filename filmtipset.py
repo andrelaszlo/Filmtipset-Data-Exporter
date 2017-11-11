@@ -18,36 +18,39 @@ class FilmtipsetLoginError(Exception):
 class FilmtipsetBrowser(Browser):
 
     def __init__(self):
-        super().__init__("nyheter24.se", user_agent=Browser.UA_CHROME)
+        super().__init__("filmtipset.se", user_agent=Browser.UA_CHROME)
 
     def login(self, username, password):
         data = {'name': username, 'pass': password}
-        (response, data) = self.request("/filmtipset/login.cgi", method="POST", data = data)
-        login_data = {'status': response.status,
-                      'location': response.getheader('Location')}
+        (response, data) = self.request("login.cgi", method="POST", data=data)
+        login_data = {
+            'status': response.status,
+            'location': response.getheader('Location'),
+            'Ok': 'Ok'
+        }
         if login_data['status'] == 302:
             if login_data['location'] == 'main.cgi':
                 return True
             elif login_data['location'] == 'main.cgi?login=failure':
                 return False
         else:
-            print("Unknown login response:", str(login_data))
+            print("Unknown login response:", str(login_data), response.read())
             return False
-   
+
     def home(self):
         member = None
-        (response, data) = self.request("/filmtipset/yourpage.cgi")
+        (_response, data) = self.request("/filmtipset/yourpage.cgi")
         html = str(data, "latin_1")
         nr_match = re.search(r'Medlem nr: ([0-9]+)', html, re.M)
         if nr_match:
             member = int(nr_match.group(1))
         grades = dict()
-        for i in range(1,6):
+        for i in range(1, 6):
             pattern = 'grade_'+str(i)+'_bg_middle_vert.gif" height="[0-9]*" width="[0-9]*" border="0" alt="([0-9]*)"'
             nr_match = re.search(pattern, html, re.M)
             if nr_match:
                 grades[i] = int(nr_match.group(1))
-            
+
         return {'member': member, 'grades': grades}
 
     def movies(self, member, graded_movies):
@@ -55,14 +58,12 @@ class FilmtipsetBrowser(Browser):
         pattern = r'a href="film/(.*?)\.html".*?Titel:</i></b> (.*?)</div>.*?Originaltitel:</i></b> (.*?)</div>.*?Film nr\.:</i></b> ([0-9]*)</div>.*?Betyg satt:</i></b> (.*?)<br/>'
         info = re.compile(pattern, re.I)
         movies = []
-        #for grade in [1]:
-        for grade in range(1,6):
+        for grade in range(1, 6):
             pages = int(ceil(graded_movies[grade]/100.0))
-            #for offset in [0]:
             for offset in range(pages):
                 print("Loading movies graded %s (page %s of %s)" % (grade, offset+1, pages))
                 curl = url % (member, offset*100, grade)
-                (response, data) = self.request(curl)
+                (_response, data) = self.request(curl)
                 html = str(data, 'latin_1')
                 f = open("./filmtipset-grades.html", 'w')
                 f.write(html)
@@ -82,8 +83,8 @@ class FilmtipsetBrowser(Browser):
 
     def comments(self, member):
         url = "/filmtipset/yourpage.cgi?page=commented_movies&member=%s&offset=%s"
-        pat = re.compile(r'<a href="film/(.*?).html".*?' + 
-                         r'<div style="" class=favoritetext>(.*?)</div>.*?' + 
+        pat = re.compile(r'<a href="film/(.*?).html".*?' +
+                         r'<div style="" class=favoritetext>(.*?)</div>.*?' +
                          r'(\d+):(\d+) (\d+)/(\d+) (\d{4})',
                          re.MULTILINE | re.DOTALL)
         nxt = re.compile(r'images/ner\.gif', re.IGNORECASE | re.MULTILINE)
@@ -93,10 +94,10 @@ class FilmtipsetBrowser(Browser):
             print("\rComment page %s" % str(int(round(offset/20.0))+1), end="")
             sys.stdout.flush()
             furl = url % (member, offset)
-            (response, data) = self.request(furl)
+            (_response, data) = self.request(furl)
             html = str(data, 'latin_1')
             for m in pat.finditer(html):
-                (h, mi, y, mo, d) = map(lambda x: int(m.group(x)),
+                (h, mi, y, mo, d) = map(lambda x, match=m: int(match.group(x)),
                                         [3, 4, 7, 6, 5])
                 #TODO: Fix timezone (?)
                 comments.append((m.group(1), self.decode(m.group(2)), datetime(y, mo, d, h, mi)))
@@ -111,13 +112,12 @@ class FilmtipsetBrowser(Browser):
     def imdb(self, url):
         full_url = "/filmtipset/film/%s.html"
         pattern = r'http://www.imdb.com/title/tt([0-9]*)/'
-        (response, data) = self.request(full_url % url)
+        (_response, data) = self.request(full_url % url)
         html = str(data, 'latin_1')
         match = re.search(pattern, html, re.M)
         if match:
             return int(match.group(1))
-        else:
-            return None
+        return None
 
     def load(self, username, password):
         if not self.login(username, password):
@@ -126,18 +126,18 @@ class FilmtipsetBrowser(Browser):
             h = self.home()
             member = h['member']
             print(username, "is member number", member)
-            
+
             grades = h['grades']
             if grades:
                 print("Grades:")
                 m = max(grades.values())
-                for n in range(1,6):
+                for n in range(1, 6):
                     print(str(n), round(70 * float(grades[n]) / m) * "*", "(" + str(grades[n]) + ")")
             movies = self.movies(member, grades)
             print("Got grades and info for %s movies" % len(movies))
 
             print("Getting IMDB links")
-            for k,m in enumerate(movies):
+            for k, m in enumerate(movies):
                 imdb = self.imdb(m['url'])
                 print("\r" + str(int(100.0*((k+1)/len(movies)))) + "%", end='')
                 sys.stdout.flush()
@@ -145,15 +145,15 @@ class FilmtipsetBrowser(Browser):
                     m['imdb'] = imdb
                     #print("%s has IMDB id %s" % (m['o_title'], imdb))
             print()
-    
+
             print("Reading comments")
             comments = self.comments(member)
             print("Found %s comments" % len(comments))
-    
+
             # merge comments with movies
             for m in movies:
                 comment_list = list(map(lambda y: (y[1], y[2]),
-                                        filter(lambda x: x[0] == m['url'], 
+                                        filter(lambda x: x[0] == m['url'],
                                                comments)))
                 if comment_list:
                     m['comments'] = comment_list
